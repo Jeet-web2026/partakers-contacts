@@ -7,12 +7,35 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\URL;
 
 class RedirectAuthController extends Controller
 {
     private static function getGlobalApiKey(): string
     {
         return env('API_GLOBAL_KEY', 'apiKey');
+    }
+
+    public function issueLink(Request $request)
+    {
+        $request->validate([
+            'user_uin' => 'required|numeric',
+            'orga_uin' => 'required|numeric',
+        ]);
+
+        $url = URL::temporarySignedRoute(
+            'session.bootstrap',
+            now()->addMinutes(20),
+            ['user' => $request->user_uin, 'orga' => $request->orga_uin]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'link' => $url
+            ],
+            'expires_at' => now()->addMinutes(20)->toDateTimeString(),
+        ]);
     }
 
     public function handleRedirect(Request $request)

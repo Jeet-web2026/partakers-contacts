@@ -14,17 +14,17 @@ Route::prefix('auth')->group(function () {
     // Main redirect authentication endpoint
     Route::get('/redirect', [RedirectAuthController::class, 'handleRedirect'])
         ->name('api.auth.redirect');
-    
+
     // Validate credentials (for external systems)
     Route::post('/validate', [RedirectAuthController::class, 'validateCredentials'])
         ->name('api.auth.validate');
-    
+
     // Generate auth URL (for external systems)
     Route::get('/generate-url', [RedirectAuthController::class, 'generateAuthUrl'])
         ->name('api.auth.generate-url');
 });
 
+Route::post('session-link', [RedirectAuthController::class, 'issueLink']);
+
 // Your existing protected routes...
-Route::middleware(['api.authenticated', 'organization.context'])->group(function () {
-    
-});
+Route::middleware(['api.authenticated', 'organization.context'])->group(function () {});

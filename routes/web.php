@@ -19,6 +19,27 @@ Route::get('/api/auth/redirect', [RedirectAuthController::class, 'handleRedirect
 Route::get('/contact/create-by-link/{token}', CreateByLink::class)
     ->name('contact.create-by-link');
 
+Route::get('/session-bootstrap', function (Request $request) {
+    $userUIN = (int) $request->query('user');
+    $orgaUIN = (int) $request->query('orga');
+
+    $hasAccess = DB::table('admn_user_orga_rela')
+        ->where('User_UIN', $userUIN)
+        ->where('Orga_UIN', $orgaUIN)
+        ->where('Stau_UIN', 100201)
+        ->exists();
+
+    abort_unless($hasAccess, 403, 'Access denied to selected organization');
+
+    $request->session()->regenerate(); // avoid session fixation
+    session([
+        'authenticated_user_uin' => $userUIN,
+        'selected_Orga_UIN'      => $orgaUIN,
+    ]);
+
+    return redirect()->away('/settings'); // or Settings::getUrl(panel: 'admin')
+})->middleware('signed')->name('session.bootstrap');
+
 // API authenticated routes
 Route::middleware(['api.authenticated'])->group(function () {
     // Organization routes
@@ -121,7 +142,7 @@ Route::middleware(['api.authenticated'])->group(function () {
             return response()->download($fullPath, basename($filePath));
         })->name('download.doc');
         Route::get('/contacts/export/csv', [App\Http\Controllers\ContactExportController::class, 'exportCsv'])
-        ->name('contacts.export.csv');
+            ->name('contacts.export.csv');
     });
 });
 
