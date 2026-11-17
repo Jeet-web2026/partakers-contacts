@@ -34,13 +34,15 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
-  
-    'partakers' =>[
-        'user_api'=>env('PARTAKERS_USER_API'),
+
+    'partakers' => [
+        'user_api' => env('PARTAKERS_USER_API'),
     ],
 
     'pricing' => [
         'url' => env('PRICING_APP_URL', 'https://subscription.partakers.in'),
     ],
+
+    'hr_app_url' => env('HR_APP_URL')
 
 ];
