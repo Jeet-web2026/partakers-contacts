@@ -103,11 +103,12 @@
                     <div x-show="showMenu" x-transition @click.away="showMenu = false"
                         class="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-600 rounded-md shadow-lg z-50 min-w-[200px]"
                         style="display: none;">
-                        <a href="{{ route('contacts.index') }}"
+                        <button type="button"
+                            onclick="window.dispatchEvent(new CustomEvent('open-home-modal'))"
                             class="w-full text-left px-4 py-2 text-gray-200 hover:bg-slate-700 flex items-center space-x-2">
                             <i class="bi bi-house"></i>
                             <span>Home</span>
-                        </a>
+                        </button>
                         @if(\App\Traits\ManagesSettings::isAdmin())
                         <button type="button"
                             x-on:click="$dispatch('open-settings-modal')"
@@ -211,6 +212,49 @@
             </template>
         </div>
 
+        <div x-data="{ show: false }"
+            x-on:open-home-modal.window="show = true"
+            x-on:keydown.escape.window="show = false">
+
+            <template x-teleport="body">
+                <div x-show="show" x-cloak x-transition.opacity
+                    class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+                    x-on:click.self="show = false">
+
+                    <div role="dialog" aria-modal="true"
+                        class="w-full max-w-3xl rounded-2xl border border-white/10 bg-slate-900 p-6 shadow-xl">
+
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <h2 class="text-xl font-semibold text-white">Choose home</h2>
+                                <p class="text-sm text-gray-400">Which application do you want to open?</p>
+                            </div>
+                            <button type="button" x-on:click="show = false"
+                                class="text-gray-300 hover:text-white" aria-label="Close">
+                                <i class="ri-close-line text-2xl"></i>
+                            </button>
+                        </div>
+
+                        <div class="mt-6 grid gap-4 sm:grid-cols-2">
+                            <a href="{{ config('services.hr_app_url') }}/dashboard"
+                                class="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 p-8 text-center transition hover:border-primary hover:bg-white/5">
+                                <i class="bi bi-person text-5xl text-white"></i>
+                                <span class="text-xl font-semibold text-white">HR Home</span>
+                                <span class="text-xs text-gray-400">Talent management dashboard</span>
+                            </a>
+
+                            <a href="{{ route('contacts.index') }}"
+                                class="flex flex-col items-center justify-center gap-2 rounded-xl border border-white/10 p-8 text-center transition hover:border-primary hover:bg-white/5">
+                                <i class="bi bi-journal-text text-5xl text-white"></i>
+                                <span class="text-xl font-semibold text-white">Contact App Home</span>
+                                <span class="text-xs text-gray-400">Contacts dashboard</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
         <!-- Subscription and Plan Alerts -->
         @include('components.plan-notification')
 
@@ -247,11 +291,7 @@
                 if (confirm('Are you sure you want to exit and end your session?')) {
                     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
-                    const route = {
-                        {
-                            route('logout')
-                        }
-                    };
+                    const route = "/api/auth/logout";
                     fetch(route, {
                             method: 'POST',
                             headers: {

@@ -25,7 +25,7 @@ class RedirectAuthController extends Controller
         $url = URL::temporarySignedRoute(
             'session.bootstrap',
             now()->addMinutes(20),
-            ['user' => $request->user_uin, 'orga' => $request->orga_uin]
+            ['user' => $request->user_uin, 'orga' => $request->orga_uin, 'page' => $request->input('page')]
         );
 
         return response()->json([

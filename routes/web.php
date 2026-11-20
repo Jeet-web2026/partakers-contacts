@@ -37,7 +37,7 @@ Route::get('/session-bootstrap', function (Request $request) {
         'selected_Orga_UIN'      => $orgaUIN,
     ]);
 
-    return redirect()->away('/settings'); // or Settings::getUrl(panel: 'admin')
+    return redirect()->away($request->query('page')); // or Settings::getUrl(panel: 'admin')
 })->middleware('signed')->name('session.bootstrap');
 
 // API authenticated routes
