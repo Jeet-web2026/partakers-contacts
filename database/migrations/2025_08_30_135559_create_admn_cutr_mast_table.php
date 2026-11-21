@@ -18,7 +18,7 @@ class CreateAdmnCutrMastTable extends Migration
             $table->string('Code', 10)->nullable();
             $table->string('Phon_Code', 10)->nullable();
             $table->string('Flag_Emoj', 10)->nullable();
-            $table->tinyInteger('MoNo_Digt', 2)->nullable()->default(10);
+            $table->unsignedTinyInteger('MoNo_Digt', 2)->nullable()->default(10);
             $table->string('CrBy', 255)->nullable();
             $table->timestamp('CrOn')->nullable();
             $table->string('MoBy', 255)->nullable();
