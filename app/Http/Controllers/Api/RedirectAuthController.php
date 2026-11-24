@@ -3,16 +3,68 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Admn_Cnta_Link_Mast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Str;
 
 class RedirectAuthController extends Controller
 {
     private static function getGlobalApiKey(): string
     {
         return env('API_GLOBAL_KEY', 'apiKey');
+    }
+
+    public function generateInviteLink(Request $request): JsonResponse
+    {
+        // HR app sends these in the request body; the contact UI falls back to the session.
+        $organizationUIN = $request->input('orga_uin') ?? session('selected_Orga_UIN');
+        $userUIN         = $request->input('user_uin') ?? session('authenticated_user_uin');
+
+        if (! $organizationUIN) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cannot generate an invite link. No organization is selected.',
+            ], 422);
+        }
+
+        try {
+            $token     = Str::random(40);
+            $expiresAt = now()->addHours(24);
+
+            Admn_Cnta_Link_Mast::create([
+                'Tokn'               => $token,
+                'Admn_Orga_Mast_UIN' => $organizationUIN,
+                'Cnta_Tag'           => 'ByLink',
+                'Is_Used'            => false,
+                'Is_Actv'            => 100201,
+                'Expy_Dt'            => $expiresAt,
+                'CrOn'               => now(),
+                'CrBy'               => $userUIN,
+            ]);
+
+            return response()->json([
+                'success'    => true,
+                'data'       => [
+                    'link' => route('contact.create-by-link', ['token' => $token]),
+                ],
+                'expires_at' => $expiresAt->toDateTimeString(),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('generateInviteLink failed: ' . $e->getMessage(), [
+                'org'       => $organizationUIN,
+                'user'      => $userUIN,
+                'exception' => $e,
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Could not generate link.',
+            ], 500);
+        }
     }
 
     public function issueLink(Request $request)

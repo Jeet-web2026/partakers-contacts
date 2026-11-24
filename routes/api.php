@@ -25,6 +25,7 @@ Route::prefix('auth')->group(function () {
 });
 
 Route::post('session-link', [RedirectAuthController::class, 'issueLink']);
+Route::post('generate-invite-link', [RedirectAuthController::class, 'generateInviteLink']);
 
 // Your existing protected routes...
 Route::middleware(['api.authenticated', 'organization.context'])->group(function () {});
