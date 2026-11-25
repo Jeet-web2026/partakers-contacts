@@ -733,13 +733,13 @@ class Edit extends Component
             ];
         }
     }
-    
+
     public function clearBankAttachment($index, $num)
     {
         $num = (int)$num;
         $pathField = $num === 1 ? 'Atch_Path' : 'Atch_Path_2';
         $tempField = $num === 1 ? 'temp_upload_1' : 'temp_upload_2';
-        
+
         // If there was an existing path, we might want to track it for deletion on save
         // For now, just null it out in the array. 
         $this->bankAccounts[$index][$pathField] = null;
@@ -776,7 +776,6 @@ class Edit extends Component
                 $this->validateOnly(
                     "bankAccounts.$index.newAttachments.$fileIndex"
                 );
-
             } catch (\Illuminate\Validation\ValidationException $e) {
                 // ❌ Invalid → remove file from ready list
                 unset($this->bankAccounts[$index]['newAttachments'][$fileIndex]);
@@ -866,7 +865,6 @@ class Edit extends Component
                 'Prmy' => (bool) ($first->Prmy ?? false),
             ];
         })->values()->toArray();
-
     }
 
     /**
@@ -924,7 +922,6 @@ class Edit extends Component
                         ->where('Regn_Numb', $regnNumb)
                         ->update(['Prmy' => 1]);
                 });
-
             } catch (\Exception $e) {
                 Log::error('Live Primary Update Failed: ' . $e->getMessage());
                 $this->dispatch('toast-error', message: 'Failed to update database.');
@@ -964,7 +961,6 @@ class Edit extends Component
             // REMOVED: The logic that checked if primary was missing and set documents[0] to true.
 
             Log::info("Document removed from database: Regn_Numb={$document['Regn_Numb']}");
-
         } catch (\Exception $e) {
             Log::error('Error removing document: ' . $e->getMessage());
             throw $e;
@@ -1210,7 +1206,7 @@ class Edit extends Component
                 'Comp_Web' => trim($this->Comp_Web) ?: null,
                 'Comp_Addr' => trim($this->Comp_Addr) ?: null,
                 'Admn_Grup_Mast_UIN' => $this->assignedGroupId,
-                'Is_Vf' => self::STATUS_VERIFIED,
+                // 'Is_Vf' => self::STATUS_VERIFIED,
                 'MoOn' => now(),
                 'MoBy' => $userUIN,
             ];
@@ -1648,7 +1644,6 @@ class Edit extends Component
             }
 
             Log::info("Documents synced successfully for user: {$this->contactId}");
-
         } catch (\Exception $e) {
             Log::error('Error syncing documents: ' . $e->getMessage());
             throw $e;
@@ -1666,12 +1661,12 @@ class Edit extends Component
             }
             if (is_object($doc['Docu_Atch_Path'])) {
                 $file = $doc['Docu_Atch_Path'];
-                
+
                 $fileSizeMB = $this->bytesToMB($file->getSize());
                 if (!$this->canAddStorage($fileSizeMB)) {
                     throw new \Exception("Storage limit exceeded. Cannot upload document '{$file->getClientOriginalName()}'.");
                 }
-                
+
                 // Convert the config MAX_DOCUMENT_FILE_SIZE (in KB) to bytes for size comparison
                 if ($file->getSize() > (self::MAX_DOCUMENT_FILE_SIZE * 1024)) {
                     Log::warning("Document exceeds 200KB: {$file->getClientOriginalName()}");
@@ -1686,7 +1681,7 @@ class Edit extends Component
                 $filename = $this->generateAttachmentFileName($extension);
                 $storagePath = $file->storeAs('Attachment/Document', $filename, 'public');
                 Log::info("Document stored successfully: {$storagePath}");
-                
+
                 $this->incrementUtilization('Ulzn_Spce', $fileSizeMB);
                 $this->logActivity('Edit with Attachment', 'Document uploaded', 1, 'MB', $fileSizeMB);
 
