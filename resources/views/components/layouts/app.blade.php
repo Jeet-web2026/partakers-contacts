@@ -103,12 +103,11 @@
                     <div x-show="showMenu" x-transition @click.away="showMenu = false"
                         class="absolute top-full right-0 mt-2 bg-slate-800 border border-slate-600 rounded-md shadow-lg z-50 min-w-[200px]"
                         style="display: none;">
-                        <button type="button"
-                            onclick="window.dispatchEvent(new CustomEvent('open-home-modal'))"
+                        <a href="{{ config('services.hr_app_url') }}/dashboard"
                             class="w-full text-left px-4 py-2 text-gray-200 hover:bg-slate-700 flex items-center space-x-2">
                             <i class="bi bi-house"></i>
                             <span>Home</span>
-                        </button>
+                        </a>
                         @if(\App\Traits\ManagesSettings::isAdmin())
                         <button type="button"
                             x-on:click="$dispatch('open-settings-modal')"
