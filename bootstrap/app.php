@@ -12,6 +12,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
         $middleware->alias([
             'api.authenticated' => \App\Http\Middleware\ApiAuthenticated::class,
             'organization.context' => \App\Http\Middleware\OrganizationContext::class,
