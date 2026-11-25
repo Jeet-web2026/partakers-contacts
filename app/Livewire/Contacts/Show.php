@@ -109,7 +109,7 @@ class Show extends Component
                 ->where('Admn_User_Mast_UIN', $this->contactId)
                 ->orderBy('Is_Prmy', 'desc')
                 ->get()
-                ->map(fn ($item) => [
+                ->map(fn($item) => [
                     'Phon_Numb' => $item->Phon_Numb,
                     'Phon_Type' => $item->Phon_Type,
                     'Cutr_Code' => $item->Cutr_Code,
@@ -119,7 +119,7 @@ class Show extends Component
                 ])
                 ->toArray();
         } catch (\Exception $e) {
-            Log::error('Error loading phones: '.$e->getMessage());
+            Log::error('Error loading phones: ' . $e->getMessage());
             $this->phones = [];
         }
     }
@@ -131,14 +131,14 @@ class Show extends Component
                 ->where('Admn_User_Mast_UIN', $this->contactId)
                 ->orderBy('Is_Prmy', 'desc')
                 ->get()
-                ->map(fn ($item) => [
+                ->map(fn($item) => [
                     'Emai_Addr' => $item->Emai_Addr,
                     'Emai_Type' => $item->Emai_Type,
                     'Is_Prmy' => (bool) $item->Is_Prmy,
                 ])
                 ->toArray();
         } catch (\Exception $e) {
-            Log::error('Error loading emails: '.$e->getMessage());
+            Log::error('Error loading emails: ' . $e->getMessage());
             $this->emails = [];
         }
     }
@@ -150,7 +150,7 @@ class Show extends Component
                 ->where('Admn_User_Mast_UIN', $this->contactId)
                 ->orderBy('Is_Prmy', 'desc')
                 ->get()
-                ->map(fn ($item) => [
+                ->map(fn($item) => [
                     'Land_Numb' => $item->Land_Numb,
                     'Land_Type' => $item->Land_Type,
                     'Cutr_Code' => $item->Cutr_Code,
@@ -158,7 +158,7 @@ class Show extends Component
                 ])
                 ->toArray();
         } catch (\Exception $e) {
-            Log::error('Error loading landlines: '.$e->getMessage());
+            Log::error('Error loading landlines: ' . $e->getMessage());
             $this->landlines = [];
         }
     }
@@ -187,7 +187,7 @@ class Show extends Component
                 ->get()
                 ->toArray();
         } catch (\Exception $e) {
-            Log::error('Error loading addresses: '.$e->getMessage());
+            Log::error('Error loading addresses: ' . $e->getMessage());
             $this->addresses = [];
         }
     }
@@ -231,7 +231,7 @@ class Show extends Component
                 'count' => count($this->bankAccounts),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error loading bank accounts: '.$e->getMessage());
+            Log::error('Error loading bank accounts: ' . $e->getMessage());
             $this->bankAccounts = [];
         }
     }
@@ -274,7 +274,7 @@ class Show extends Component
                 'count' => count($this->documents),
             ]);
         } catch (\Exception $e) {
-            Log::error('Error loading documents: '.$e->getMessage());
+            Log::error('Error loading documents: ' . $e->getMessage());
             $this->documents = [];
         }
     }
@@ -327,7 +327,7 @@ class Show extends Component
                 });
             $this->allDocumentTypes = Admn_Docu_Type_Mast::where('Stau', 100201)->get();
         } catch (\Exception $e) {
-            Log::error('Error loading lookup data: '.$e->getMessage());
+            Log::error('Error loading lookup data: ' . $e->getMessage());
         }
     }
 
@@ -438,8 +438,59 @@ class Show extends Component
                 })
                 ->toArray();
         } catch (\Exception $e) {
-            \Log::error('Error loading contact notes: '.$e->getMessage());
+            \Log::error('Error loading contact notes: ' . $e->getMessage());
             $this->contactNotes = [];
+        }
+    }
+
+    public function verify(): void
+    {
+        $this->setVerification(true);
+    }
+
+    public function unverify(): void
+    {
+        $this->setVerification(false);
+    }
+
+    private function setVerification(bool $verified): void
+    {
+        // mount() runs only on page load, so check permission again here
+        abort_unless(\App\Traits\ManagesSettings::hasPermission('Reports'), 403);
+
+        $action = $verified ? 'Verified' : 'Unverified';
+
+        try {
+            DB::transaction(function () use ($verified) {
+                $contact = Admn_User_Mast::query()
+                    ->where('Is_Actv', self::STATUS_ACTIVE)
+                    ->lockForUpdate()
+                    ->findOrFail($this->contactId);
+
+                DB::table('admn_user_mast')
+                    ->where('Admn_User_Mast_UIN', $this->contactId)
+                    ->update([
+                        'Is_Vf' => $verified ? self::STATUS_VERIFIED : self::STATUS_UNVERIFIED,
+                        'MoOn' => now(),
+                    ]);
+
+                if ($contact->Hr_application_UIN) {
+                    DB::table('HR_Mast_Job_Aply')
+                        ->where('Aply_UIN', $contact->Hr_application_UIN)
+                        ->update([
+                            'IS_Vf' => $verified ? self::STATUS_VERIFIED : null, // 100207
+                            'Vr_At' => $verified ? now() : null,
+                        ]);
+                }
+            });
+
+            $this->contact->refresh();
+
+            $this->logActivity('General Report', "{$action} contact ID: {$this->contactId}");
+            session()->flash('verify_success', "Contact {$action} successfully.");
+        } catch (\Exception $e) {
+            Log::error("Error updating verification for contact {$this->contactId}: " . $e->getMessage());
+            session()->flash('verify_error', 'Could not update verification status.');
         }
     }
 

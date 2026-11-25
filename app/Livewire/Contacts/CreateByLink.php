@@ -19,6 +19,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Intervention\Image\Facades\Image;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use Livewire\WithFileUploads;
 
@@ -68,6 +69,9 @@ class CreateByLink extends Component
     public $Anvy_Dt; // Added
 
     public $Deth_Dt; // Added
+
+    #[Locked]
+    public ?int $applicationUIN = null;
 
     public $Note;
 
@@ -137,6 +141,12 @@ class CreateByLink extends Component
             if ($this->hasError) {
                 return;
             }
+
+            $this->applicationUIN = filter_var(
+                request()->query('uin'),
+                FILTER_VALIDATE_INT,
+                ['options' => ['min_range' => 1]]
+            ) ?: null;
 
             $this->loadCommonReferenceData();
             $this->initializeCollections();
@@ -816,6 +826,7 @@ class CreateByLink extends Component
 
         $insertData = [
             'Admn_User_Mast_UIN' => $contactId,
+            'Hr_application_UIN' => $this->applicationUIN,
             'Prfx_UIN' => $this->Prfx_UIN ?: null,
             'FaNm' => preg_replace('/[^a-zA-Z ]/', '', trim($this->FaNm)),
             'MiNm' => preg_replace('/[^a-zA-Z ]/', '', trim($this->MiNm)) ?: null,

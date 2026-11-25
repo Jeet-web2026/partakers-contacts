@@ -89,10 +89,6 @@
                 <div class="relative">
                     <!-- Menu Button -->
                     <div class="flex items-center gap-2">
-                        <span class="text-sm font-semibold text-gray-200">Contacts</span>
-                        <div class="w-8 h-8 rounded bg-blue-900/50 flex items-center justify-center text-blue-400 font-bold text-sm border border-blue-500/20 shrink-0">
-                            {{ strtoupper(substr($organizationName, 0, 1)) }}
-                        </div>
                         <button @click="showMenu = !showMenu"
                             class="p-2 rounded-full hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <i class="bi bi-three-dots-vertical text-gray-300 text-lg"></i>

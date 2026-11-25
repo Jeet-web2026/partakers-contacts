@@ -11,7 +11,8 @@ return new class extends Migration
     {
         Schema::create('admn_user_mast', function (Blueprint $table) {
             $table->unsignedBigInteger('Admn_User_Mast_UIN')->default(DB::raw('(unix_timestamp() - 1592592000)'));
-            $table->unsignedBigInteger('Admn_Orga_Mast_UIN');
+            $table->unsignedBigInteger('Admn_Orga_Mast_UIN')->index('hr_admin_uin');
+            $table->unsignedBigInteger('Hr_application_UIN')->nullable();
             $table->unsignedBigInteger('Admn_Grup_Mast_UIN')->nullable();
             $table->unsignedBigInteger('Prfx_UIN')->nullable();
             $table->string('FaNm', 255);

@@ -23,6 +23,7 @@ class RedirectAuthController extends Controller
         // HR app sends these in the request body; the contact UI falls back to the session.
         $organizationUIN = $request->input('orga_uin') ?? session('selected_Orga_UIN');
         $userUIN         = $request->input('user_uin') ?? session('authenticated_user_uin');
+        $uin = $request->input('uin');
 
         if (! $organizationUIN) {
             return response()->json([
@@ -49,7 +50,7 @@ class RedirectAuthController extends Controller
             return response()->json([
                 'success'    => true,
                 'data'       => [
-                    'link' => route('contact.create-by-link', ['token' => $token]),
+                    'link' => route('contact.create-by-link', ['token' => $token, 'uin' => $uin]),
                 ],
                 'expires_at' => $expiresAt->toDateTimeString(),
             ]);
