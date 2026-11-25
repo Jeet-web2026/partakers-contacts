@@ -11,10 +11,5 @@ class DatabaseSeeder extends Seeder
         // Reference data: countries, states, districts, pincodes, banks, orgs, settings, subscription masters
         $this->call(MasterDataSeeder::class);
         $this->call(UserDataSeeder::class);
-
-        // Real users, logins, bank and contact data from the dump. Local/dev only.
-        if (app()->environment('local')) {
-            $this->call(UserDataSeeder::class);
-        }
     }
 }
