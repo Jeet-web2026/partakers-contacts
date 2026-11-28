@@ -57,7 +57,8 @@ class Admn_User_Mast extends Model
         'Is_Actv',
         'Is_Vf',
         'Prty',
-        'Hr_application_UIN'
+        'Hr_application_UIN',
+        'Vr_Type'
     ];
 
     protected $casts = [
