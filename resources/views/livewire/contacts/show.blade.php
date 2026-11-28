@@ -841,15 +841,16 @@
                         @endif
                     </div>
 
+                    @if ($contact->Is_Vf != self::STATUS_VERIFIED)
                     @php
                     $selected = $this->selectedEngagement;
                     $locked = count($this->payrollOptions) === 1;
-                    $field = 'h-11 w-full rounded-md border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-800';
-                    $enabled = 'border-gray-600 bg-gray-800 text-white';
-                    $disabled = 'border-dashed border-gray-700 bg-gray-800/50 text-gray-400 cursor-not-allowed';
+                    $field = 'h-11 w-full rounded-md border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500';
+                    $enabled = 'border-gray-600 bg-slate-800 text-white';
+                    $disabled = 'border-dashed border-gray-700 bg-slate-800/50 text-gray-400 cursor-not-allowed';
                     @endphp
 
-                    <div class="w-full space-y-4 mb-3">
+                    <div class="w-full space-y-4 mb-3" wire:key="engagement-block">
                         <div>
                             <h3 class="text-lg font-semibold text-white">Engagement details</h3>
                             <p class="text-sm text-gray-400">Choose in order. Each step unlocks the next.</p>
@@ -886,13 +887,13 @@
                                 </button>
 
                                 <div x-show="open" x-transition style="display: none;"
-                                    class="absolute inset-x-0 z-20 mt-1 max-h-80 space-y-0.5 overflow-y-auto rounded-lg border border-gray-600 bg-gray-800 p-1 shadow-xl">
+                                    class="absolute inset-x-0 z-20 mt-1 max-h-80 space-y-0.5 overflow-y-auto rounded-lg border border-gray-600 bg-slate-800 p-1 shadow-xl">
                                     @forelse ($this->engagementTypes as $type)
                                     <button type="button" wire:key="enga-option-{{ $type->Enga_UIN }}"
                                         wire:click="$set('engaUin', '{{ $type->Enga_UIN }}')"
                                         x-on:click="open = false; $refs.trigger.focus()"
                                         aria-pressed="{{ $engaUin == $type->Enga_UIN ? 'true' : 'false' }}"
-                                        class="block w-full rounded-md px-3 py-2.5 text-left {{ $engaUin == $type->Enga_UIN ? 'bg-blue-900' : 'hover:bg-gray-700 focus:bg-gray-700' }}">
+                                        class="block w-full rounded-md px-3 py-2.5 text-left {{ $engaUin == $type->Enga_UIN ? 'bg-blue-900' : 'hover:bg-slate-700 focus:bg-slate-700' }}">
                                         <span class="block text-sm font-semibold text-white">{{ $type->Enga_Type }}</span>
                                         <span class="block text-xs leading-5 text-gray-300">{{ $type->Enga_Desp }}</span>
                                     </button>
@@ -910,6 +911,7 @@
                             <div wire:key="enga-payroll-{{ $engaName }}-{{ $engaUin }}">
                                 <label for="pyrlAply" class="mb-1.5 block text-sm font-medium text-gray-300">3. Payroll applicable</label>
                                 <select id="pyrlAply" wire:model.live="pyrlAply"
+                                    @disabled(! $selected || $locked)
                                     class="{{ $field }} {{ ! $selected || $locked ? $disabled : $enabled }}">
                                     <option value="">{{ $selected ? 'Select Yes or No' : 'Select a type first' }}</option>
                                     @foreach ($this->payrollOptions as $option)
@@ -925,6 +927,7 @@
 
                         <p wire:loading.delay wire:target="engaName, $set" class="text-xs text-blue-300">Loading...</p>
                     </div>
+                    @endif
 
                     @if ($contact->Is_Vf == self::STATUS_VERIFIED)
                     <button type="button" wire:key="btn-unverify" wire:click="unverify"
