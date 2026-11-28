@@ -866,6 +866,7 @@
                                     <option value="{{ $name }}">{{ $name }}</option>
                                     @endforeach
                                 </select>
+                                @error('engaName') <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p> @enderror
                             </div>
 
                             {{-- 2. Engagement type --}}
@@ -902,6 +903,8 @@
                                     @endforelse
                                 </div>
 
+                                @error('engaUin') <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p> @enderror
+
                                 @if ($selected)
                                 <p class="mt-1.5 text-xs leading-5 text-gray-400">{{ $selected->Enga_Desp }}</p>
                                 @endif
@@ -919,6 +922,7 @@
                                     @endforeach
                                 </select>
 
+                                @error('pyrlAply') <p class="mt-1.5 text-xs text-red-400">{{ $message }}</p> @enderror
                                 @if ($locked)
                                 <p class="mt-1.5 text-xs text-gray-400">Set by the engagement type.</p>
                                 @endif

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Traits\LogsActivity;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Computed;
 use Livewire\Component;
 
@@ -475,7 +476,21 @@ class Show extends Component
         // the value comes from the browser, so validate it
         abort_unless(array_key_exists($type, self::VR_TYPES), 422);
 
-        $this->setVerification($type);
+        $this->validate(
+            [
+                'engaName' => ['required', Rule::in($this->engagementNames->all())],
+                'engaUin'  => ['required', Rule::in($this->engagementTypes->pluck('Enga_UIN')->all())],
+                'pyrlAply' => ['required', Rule::in($this->payrollOptions)],
+            ],
+            [],
+            [
+                'engaName' => 'engagement',
+                'engaUin'  => 'engagement type',
+                'pyrlAply' => 'payroll applicable',
+            ]
+        );
+
+        $this->setVerification($type, (int) $this->engaUin, $this->pyrlAply);
     }
 
     public function unverify(): void
@@ -483,7 +498,7 @@ class Show extends Component
         $this->setVerification(null);
     }
 
-    private function setVerification(?string $type): void
+    private function setVerification(?string $type, ?int $engaUin = null, ?string $pyrlAply = null): void
     {
         // mount() runs only on page load, so check permission again here
         abort_unless(\App\Traits\ManagesSettings::hasPermission('Reports'), 403);
@@ -493,7 +508,7 @@ class Show extends Component
         $label = $verified ? ' as ' . self::VR_TYPES[$type] . ' employee' : '';
 
         try {
-            DB::transaction(function () use ($verified, $type) {
+            DB::transaction(function () use ($verified, $type, $engaUin, $pyrlAply) {
                 $contact = Admn_User_Mast::query()
                     ->where('Is_Actv', self::STATUS_ACTIVE)
                     ->lockForUpdate()
@@ -505,6 +520,8 @@ class Show extends Component
                         'Is_Vf' => $verified ? self::STATUS_VERIFIED : self::STATUS_UNVERIFIED,
                         'MoOn' => now(),
                         'Vr_Type' => $type,
+                        'Enga_UIN' => $engaUin,
+                        'Pyrl_Aply' => $pyrlAply,
                     ]);
 
                 if ($contact->Hr_application_UIN) {
@@ -514,12 +531,15 @@ class Show extends Component
                             'IS_Vf' => $verified ? self::STATUS_VERIFIED : null, // 100207
                             'Vr_At' => $verified ? now() : null,
                             'Vr_Type' => $type,
+                            'Enga_UIN' => $engaUin,
+                            'Pyrl_Aply' => $pyrlAply,
                         ]);
                 }
             });
 
             $this->contact->refresh();
             unset($this->verifiedType); // clear the computed cache
+            $this->reset('engaName', 'engaUin', 'pyrlAply');
 
             $this->logActivity('General Report', "{$action} contact ID: {$this->contactId}{$label}");
             session()->flash('verify_success', "Contact {$action}{$label} successfully.");

@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class Admn_User_Mast extends Model
@@ -58,7 +59,9 @@ class Admn_User_Mast extends Model
         'Is_Vf',
         'Prty',
         'Hr_application_UIN',
-        'Vr_Type'
+        'Vr_Type',
+        'Enga_UIN',
+        'Pyrl_Aply',
     ];
 
     protected $casts = [
@@ -74,6 +77,7 @@ class Admn_User_Mast extends Model
         'Admn_Orga_Mast_UIN' => 'integer',
         'Is_Actv' => 'integer',
         'Is_Vf' => 'integer',
+        'Enga_UIN' => 'integer',
     ];
 
     // ============================================================
@@ -323,5 +327,16 @@ class Admn_User_Mast extends Model
     public function pendingDocuments(): HasMany
     {
         return $this->documents()->where('Stau', 100201)->whereNull('VrBy');
+    }
+
+    public function engagementDetail(): ?object
+    {
+        if (! $this->Enga_UIN) {
+            return null;
+        }
+
+        return DB::table('hr_mast_enga_name')
+            ->where('Enga_UIN', $this->Enga_UIN)
+            ->first(['Enga_UIN', 'Enga_Name', 'Enga_Type', 'Enga_Desp']);
     }
 }
