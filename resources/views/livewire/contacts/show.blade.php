@@ -850,7 +850,7 @@
                     wire:confirm="Are you sure you want to verify this contact?"
                     wire:loading.attr="disabled" wire:target="verify"
                     class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50">
-                    <i class="bi bi-check-circle"></i> Verify
+                    <i class="bi bi-check-circle"></i> Verify as permanent employee
                 </button>
                 @endif
             </div>
