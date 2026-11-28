@@ -53,6 +53,16 @@ class Show extends Component
     // New features for display
     public $contactNotes = [];
 
+    public string $engaName = '';
+
+    public string $engaUin = '';
+
+    public string $pyrlAply = '';
+
+    private const ENGA_TABLE = 'hr_mast_enga_name';
+
+    private const ENGA_ACTIVE_STATUS = 101;
+
     public const VR_TYPES = [
         'parttime'  => 'part-time',
         'permanent' => 'permanent',
@@ -516,6 +526,68 @@ class Show extends Component
         } catch (\Exception $e) {
             Log::error("Error updating verification for contact {$this->contactId}: " . $e->getMessage());
             session()->flash('verify_error', 'Could not update verification status.');
+        }
+    }
+
+    /** Dropdown 1: Employee, Training, External */
+    #[Computed]
+    public function engagementNames()
+    {
+        return DB::table(self::ENGA_TABLE)
+            ->where('Stau_UIN', self::ENGA_ACTIVE_STATUS)
+            ->select('Enga_Name')
+            ->groupBy('Enga_Name')
+            ->orderByRaw('MIN(Enga_UIN)')
+            ->pluck('Enga_Name');
+    }
+
+    /** Dropdown 2: types of the selected engagement */
+    #[Computed]
+    public function engagementTypes()
+    {
+        if ($this->engaName === '') {
+            return collect();
+        }
+
+        return DB::table(self::ENGA_TABLE)
+            ->where('Stau_UIN', self::ENGA_ACTIVE_STATUS)
+            ->where('Enga_Name', $this->engaName)
+            ->orderBy('Enga_UIN')
+            ->get(['Enga_UIN', 'Enga_Type', 'Enga_Desp', 'Pyrl_Aply']);
+    }
+
+    #[Computed]
+    public function selectedEngagement(): ?object
+    {
+        return $this->engagementTypes->firstWhere('Enga_UIN', (int) $this->engaUin);
+    }
+
+    /** Dropdown 3: "Yes, No" becomes ['Yes', 'No'] */
+    #[Computed]
+    public function payrollOptions(): array
+    {
+        if (! $this->selectedEngagement) {
+            return [];
+        }
+
+        return array_values(array_filter(array_map(
+            'trim',
+            explode(',', (string) $this->selectedEngagement->Pyrl_Aply)
+        )));
+    }
+
+    public function updatedEngaName(): void
+    {
+        $this->reset('engaUin', 'pyrlAply');
+    }
+
+    public function updatedEngaUin(): void
+    {
+        $this->reset('pyrlAply');
+
+        // auto-select when there is only one choice
+        if (count($this->payrollOptions) === 1) {
+            $this->pyrlAply = $this->payrollOptions[0];
         }
     }
 

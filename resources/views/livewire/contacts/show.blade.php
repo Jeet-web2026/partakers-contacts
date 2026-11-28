@@ -830,39 +830,126 @@
                 @endif
             </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-3 px-4">
-                <div class="w-full">
-                    @if (session()->has('verify_success'))
-                    <span class="text-green-300 text-sm">{{ session('verify_success') }}</span>
-                    @endif
-                    @if (session()->has('verify_error'))
-                    <span class="text-red-400 text-sm">{{ session('verify_error') }}</span>
+            <div class="figma-card bg-slate-600/40 py-5 px-3">
+                <div class="flex flex-wrap items-center justify-between gap-3 px-4">
+                    <div class="w-full">
+                        @if (session()->has('verify_success'))
+                        <span class="text-green-300 text-sm">{{ session('verify_success') }}</span>
+                        @endif
+                        @if (session()->has('verify_error'))
+                        <span class="text-red-400 text-sm">{{ session('verify_error') }}</span>
+                        @endif
+                    </div>
+
+                    @php
+                    $selected = $this->selectedEngagement;
+                    $locked = count($this->payrollOptions) === 1;
+                    $field = 'h-11 w-full rounded-md border px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-800';
+                    $enabled = 'border-gray-600 bg-gray-800 text-white';
+                    $disabled = 'border-dashed border-gray-700 bg-gray-800/50 text-gray-400 cursor-not-allowed';
+                    @endphp
+
+                    <div class="w-full space-y-4 mb-3">
+                        <div>
+                            <h3 class="text-lg font-semibold text-white">Engagement details</h3>
+                            <p class="text-sm text-gray-400">Choose in order. Each step unlocks the next.</p>
+                        </div>
+
+                        <div class="grid grid-cols-1 items-start gap-4 md:grid-cols-4">
+                            {{-- 1. Engagement --}}
+                            <div>
+                                <label for="engaName" class="mb-1.5 block text-sm font-medium text-gray-300">1. Engagement</label>
+                                <select id="engaName" wire:model.live="engaName" class="{{ $field }} {{ $enabled }}">
+                                    <option value="">Select engagement</option>
+                                    @foreach ($this->engagementNames as $name)
+                                    <option value="{{ $name }}">{{ $name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- 2. Engagement type --}}
+                            <div class="relative min-w-0 md:col-span-2" wire:key="enga-type-{{ $engaName }}"
+                                x-data="{ open: false }"
+                                x-on:click.outside="open = false"
+                                x-on:keydown.escape="open = false; $refs.trigger.focus()">
+                                <span id="engaTypeLabel" class="mb-1.5 block text-sm font-medium text-gray-300">2. Engagement type</span>
+
+                                <button type="button" id="engaTypeButton" x-ref="trigger"
+                                    aria-labelledby="engaTypeLabel engaTypeButton"
+                                    x-on:click="open = ! open" x-bind:aria-expanded="open"
+                                    @disabled($engaName==='' )
+                                    class="{{ $field }} {{ $engaName === '' ? $disabled : $enabled }} flex items-center justify-between gap-2 text-left">
+                                    <span class="truncate">
+                                        {{ $selected?->Enga_Type ?? ($engaName === '' ? 'Select an engagement first' : 'Select engagement type') }}
+                                    </span>
+                                    <i class="bi bi-chevron-down shrink-0"></i>
+                                </button>
+
+                                <div x-show="open" x-transition style="display: none;"
+                                    class="absolute inset-x-0 z-20 mt-1 max-h-80 space-y-0.5 overflow-y-auto rounded-lg border border-gray-600 bg-gray-800 p-1 shadow-xl">
+                                    @forelse ($this->engagementTypes as $type)
+                                    <button type="button" wire:key="enga-option-{{ $type->Enga_UIN }}"
+                                        wire:click="$set('engaUin', '{{ $type->Enga_UIN }}')"
+                                        x-on:click="open = false; $refs.trigger.focus()"
+                                        aria-pressed="{{ $engaUin == $type->Enga_UIN ? 'true' : 'false' }}"
+                                        class="block w-full rounded-md px-3 py-2.5 text-left {{ $engaUin == $type->Enga_UIN ? 'bg-blue-900' : 'hover:bg-gray-700 focus:bg-gray-700' }}">
+                                        <span class="block text-sm font-semibold text-white">{{ $type->Enga_Type }}</span>
+                                        <span class="block text-xs leading-5 text-gray-300">{{ $type->Enga_Desp }}</span>
+                                    </button>
+                                    @empty
+                                    <p class="px-3 py-2 text-sm text-gray-400">No engagement types found.</p>
+                                    @endforelse
+                                </div>
+
+                                @if ($selected)
+                                <p class="mt-1.5 text-xs leading-5 text-gray-400">{{ $selected->Enga_Desp }}</p>
+                                @endif
+                            </div>
+
+                            {{-- 3. Payroll applicable --}}
+                            <div wire:key="enga-payroll-{{ $engaName }}-{{ $engaUin }}">
+                                <label for="pyrlAply" class="mb-1.5 block text-sm font-medium text-gray-300">3. Payroll applicable</label>
+                                <select id="pyrlAply" wire:model.live="pyrlAply"
+                                    class="{{ $field }} {{ ! $selected || $locked ? $disabled : $enabled }}">
+                                    <option value="">{{ $selected ? 'Select Yes or No' : 'Select a type first' }}</option>
+                                    @foreach ($this->payrollOptions as $option)
+                                    <option value="{{ $option }}">{{ $option }}</option>
+                                    @endforeach
+                                </select>
+
+                                @if ($locked)
+                                <p class="mt-1.5 text-xs text-gray-400">Set by the engagement type.</p>
+                                @endif
+                            </div>
+                        </div>
+
+                        <p wire:loading.delay wire:target="engaName, $set" class="text-xs text-blue-300">Loading...</p>
+                    </div>
+
+                    @if ($contact->Is_Vf == self::STATUS_VERIFIED)
+                    <button type="button" wire:key="btn-unverify" wire:click="unverify"
+                        wire:confirm="Are you sure you want to unverify this contact?"
+                        wire:loading.attr="disabled" wire:target="verify, unverify"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50">
+                        <i class="bi bi-x-circle"></i>
+                        Unverify{{ $this->verifiedType ? ' from ' . (self::VR_TYPES[$this->verifiedType] ?? $this->verifiedType) . ' employee' : '' }}
+                    </button>
+                    @else
+                    <button type="button" wire:key="btn-verify-parttime" wire:click="verify('parttime')"
+                        wire:confirm="Are you sure you want to verify this contact as a part-time employee?"
+                        wire:loading.attr="disabled" wire:target="verify, unverify"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50">
+                        <i class="bi bi-check-circle"></i> Verify as part-time employee
+                    </button>
+
+                    <button type="button" wire:key="btn-verify-permanent" wire:click="verify('permanent')"
+                        wire:confirm="Are you sure you want to verify this contact as a permanent employee?"
+                        wire:loading.attr="disabled" wire:target="verify, unverify"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50">
+                        <i class="bi bi-check-circle"></i> Verify as permanent employee
+                    </button>
                     @endif
                 </div>
-
-                @if ($contact->Is_Vf == self::STATUS_VERIFIED)
-                <button type="button" wire:key="btn-unverify" wire:click="unverify"
-                    wire:confirm="Are you sure you want to unverify this contact?"
-                    wire:loading.attr="disabled" wire:target="verify, unverify"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50">
-                    <i class="bi bi-x-circle"></i>
-                    Unverify{{ $this->verifiedType ? ' from ' . (self::VR_TYPES[$this->verifiedType] ?? $this->verifiedType) . ' employee' : '' }}
-                </button>
-                @else
-                <button type="button" wire:key="btn-verify-parttime" wire:click="verify('parttime')"
-                    wire:confirm="Are you sure you want to verify this contact as a part-time employee?"
-                    wire:loading.attr="disabled" wire:target="verify, unverify"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50">
-                    <i class="bi bi-check-circle"></i> Verify as part-time employee
-                </button>
-
-                <button type="button" wire:key="btn-verify-permanent" wire:click="verify('permanent')"
-                    wire:confirm="Are you sure you want to verify this contact as a permanent employee?"
-                    wire:loading.attr="disabled" wire:target="verify, unverify"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50">
-                    <i class="bi bi-check-circle"></i> Verify as permanent employee
-                </button>
-                @endif
             </div>
         </div>
     </div>
