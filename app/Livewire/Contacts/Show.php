@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use App\Traits\LogsActivity;
+use Livewire\Attributes\Computed;
 use Livewire\Component;
 
 class Show extends Component
@@ -52,6 +53,10 @@ class Show extends Component
     // New features for display
     public $contactNotes = [];
 
+    public const VR_TYPES = [
+        'parttime'  => 'part-time',
+        'permanent' => 'permanent',
+    ];
 
     public function mount($contact)
     {
@@ -279,10 +284,6 @@ class Show extends Component
         }
     }
 
-
-
-
-
     private function loadDynamicProperties()
     {
         if ($this->contact->Prfx_UIN && ! empty($this->allPrefixes)) {
@@ -443,25 +444,46 @@ class Show extends Component
         }
     }
 
-    public function verify(): void
+    /**
+     * Verification type saved on the linked job application.
+     * Use it in Blade as $this->verifiedType
+     */
+    #[Computed]
+    public function verifiedType(): ?string
     {
-        $this->setVerification(true);
+        if (! $this->contact?->Hr_application_UIN) {
+            return null;
+        }
+
+        return DB::table('HR_Mast_Job_Aply')
+            ->where('Aply_UIN', $this->contact->Hr_application_UIN)
+            ->value('Vr_Type');
+    }
+
+    public function verify(string $type): void
+    {
+        // the value comes from the browser, so validate it
+        abort_unless(array_key_exists($type, self::VR_TYPES), 422);
+
+        $this->setVerification($type);
     }
 
     public function unverify(): void
     {
-        $this->setVerification(false);
+        $this->setVerification(null);
     }
 
-    private function setVerification(bool $verified): void
+    private function setVerification(?string $type): void
     {
         // mount() runs only on page load, so check permission again here
         abort_unless(\App\Traits\ManagesSettings::hasPermission('Reports'), 403);
 
+        $verified = $type !== null;
         $action = $verified ? 'Verified' : 'Unverified';
+        $label = $verified ? ' as ' . self::VR_TYPES[$type] . ' employee' : '';
 
         try {
-            DB::transaction(function () use ($verified) {
+            DB::transaction(function () use ($verified, $type) {
                 $contact = Admn_User_Mast::query()
                     ->where('Is_Actv', self::STATUS_ACTIVE)
                     ->lockForUpdate()
@@ -472,6 +494,7 @@ class Show extends Component
                     ->update([
                         'Is_Vf' => $verified ? self::STATUS_VERIFIED : self::STATUS_UNVERIFIED,
                         'MoOn' => now(),
+                        'Vr_Type' => $type,
                     ]);
 
                 if ($contact->Hr_application_UIN) {
@@ -480,14 +503,16 @@ class Show extends Component
                         ->update([
                             'IS_Vf' => $verified ? self::STATUS_VERIFIED : null, // 100207
                             'Vr_At' => $verified ? now() : null,
+                            'Vr_Type' => $type,
                         ]);
                 }
             });
 
             $this->contact->refresh();
+            unset($this->verifiedType); // clear the computed cache
 
-            $this->logActivity('General Report', "{$action} contact ID: {$this->contactId}");
-            session()->flash('verify_success', "Contact {$action} successfully.");
+            $this->logActivity('General Report', "{$action} contact ID: {$this->contactId}{$label}");
+            session()->flash('verify_success', "Contact {$action}{$label} successfully.");
         } catch (\Exception $e) {
             Log::error("Error updating verification for contact {$this->contactId}: " . $e->getMessage());
             session()->flash('verify_error', 'Could not update verification status.');

@@ -11,7 +11,7 @@
 
             @if ($contact->Is_Vf == self::STATUS_VERIFIED)
             <span class="inline-flex items-center gap-1 mr-4 px-3 py-1 rounded-full border border-green-400/40 bg-green-600/20 text-green-300 text-sm font-semibold">
-                <i class="bi bi-patch-check-fill"></i> Verified
+                <i class="bi bi-patch-check-fill"></i> Verified as {{ $contact->Vr_Type }} employee
             </span>
             @endif
         </div>
@@ -831,54 +831,38 @@
             </div>
 
             <div class="flex flex-wrap items-center justify-between gap-3 px-4">
-                <div>
+                <div class="w-full">
                     @if (session()->has('verify_success'))
                     <span class="text-green-300 text-sm">{{ session('verify_success') }}</span>
                     @endif
                     @if (session()->has('verify_error'))
                     <span class="text-red-400 text-sm">{{ session('verify_error') }}</span>
                     @endif
-
-                    @if ($contact->Is_Vf == self::STATUS_VERIFIED)
-                    <button type="button" wire:key="btn-unverify" wire:click="unverify"
-                        wire:confirm="Are you sure you want to unverify this contact?"
-                        wire:loading.attr="disabled" wire:target="unverify"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50">
-                        <i class="bi bi-x-circle"></i> Unverify from parttime employee
-                    </button>
-                    @else
-                    <button type="button" wire:key="btn-verify" wire:click="verify"
-                        wire:confirm="Are you sure you want to verify this contact?"
-                        wire:loading.attr="disabled" wire:target="verify"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50">
-                        <i class="bi bi-check-circle"></i> Verify as parttime employee
-                    </button>
-                    @endif
                 </div>
-                <div>
-                    @if (session()->has('verify_success'))
-                    <span class="text-green-300 text-sm">{{ session('verify_success') }}</span>
-                    @endif
-                    @if (session()->has('verify_error'))
-                    <span class="text-red-400 text-sm">{{ session('verify_error') }}</span>
-                    @endif
 
-                    @if ($contact->Is_Vf == self::STATUS_VERIFIED)
-                    <button type="button" wire:key="btn-unverify" wire:click="unverify"
-                        wire:confirm="Are you sure you want to unverify this contact?"
-                        wire:loading.attr="disabled" wire:target="unverify"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50">
-                        <i class="bi bi-x-circle"></i> Unverify from permanent employee
-                    </button>
-                    @else
-                    <button type="button" wire:key="btn-verify" wire:click="verify"
-                        wire:confirm="Are you sure you want to verify this contact?"
-                        wire:loading.attr="disabled" wire:target="verify"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50">
-                        <i class="bi bi-check-circle"></i> Verify as permanent employee
-                    </button>
-                    @endif
-                </div>
+                @if ($contact->Is_Vf == self::STATUS_VERIFIED)
+                <button type="button" wire:key="btn-unverify" wire:click="unverify"
+                    wire:confirm="Are you sure you want to unverify this contact?"
+                    wire:loading.attr="disabled" wire:target="verify, unverify"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-50">
+                    <i class="bi bi-x-circle"></i>
+                    Unverify{{ $this->verifiedType ? ' from ' . (self::VR_TYPES[$this->verifiedType] ?? $this->verifiedType) . ' employee' : '' }}
+                </button>
+                @else
+                <button type="button" wire:key="btn-verify-parttime" wire:click="verify('parttime')"
+                    wire:confirm="Are you sure you want to verify this contact as a part-time employee?"
+                    wire:loading.attr="disabled" wire:target="verify, unverify"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold disabled:opacity-50">
+                    <i class="bi bi-check-circle"></i> Verify as part-time employee
+                </button>
+
+                <button type="button" wire:key="btn-verify-permanent" wire:click="verify('permanent')"
+                    wire:confirm="Are you sure you want to verify this contact as a permanent employee?"
+                    wire:loading.attr="disabled" wire:target="verify, unverify"
+                    class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-green-600 hover:bg-green-700 text-white text-sm font-semibold disabled:opacity-50">
+                    <i class="bi bi-check-circle"></i> Verify as permanent employee
+                </button>
+                @endif
             </div>
         </div>
     </div>
